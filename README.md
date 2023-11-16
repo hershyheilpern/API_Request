@@ -1,2 +1,2 @@
 # API_Request
-library tr easily create API requests 
+library to easily create API requests 
