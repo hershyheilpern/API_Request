@@ -1,0 +1,19 @@
+{
+  "name": "api_request",
+  "version": "0.1.0",
+  "description": "library to easily create API requests ",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hershyheilpern/API_Request.git"
+  },
+  "author": "Hershy Heilpern",
+  "license": "",
+  "bugs": {
+    "url": "https://github.com/hershyheilpern/API_Request/issues"
+  },
+  "homepage": "https://github.com/hershyheilpern/API_Request#readme"
+}
