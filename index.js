@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { read } = require('node:fs');
 const querystring = require('node:querystring');
 function ALL(config) {
     return new Promise((resolve, reject) => {
@@ -31,27 +32,92 @@ function ALL(config) {
             }
 
         }
+        console.log("httpconfig",httpconfig.url)
         axios(httpconfig)
             .then(function (response) {
-                if(config.getAll){
+                let readyToResolveCB = false
+                let readyToResolve = false
+                let dataToResolve = null
+                if(config.getAll && config.isList){
                     // console.log("response",response)
                     config.res = config.res || []
                     config.res.push(...config.getDataOnly(response))
                     console.log("config.res.length",config.res.length,"config.org_limit",config.org_limit,"config.query.limit",config.query.limit)
                     if(config.res.length < config.org_limit){
                         if(config.getDataOnly(response).length < config.query.limit){
-                            return resolve(config.res)
+                            readyToResolveCB = true
+                            readyToResolve = true
+                            dataToResolve = ALL(config)        
+
+                            // return resolve(config.res)
                         }else
                         if(config.getNext(config,response.data)){
                             config.query.after = config.getNext(config,response.data)
-                            return resolve(ALL(config))
+                            readyToResolveCB = false
+                            readyToResolve = true
+                            dataToResolve = ALL(config)        
+
+                            // return resolve(ALL(config))
                         }
                     }else{
-                        // return resolve(config)
-                        resolve(config.res)
+                        readyToResolve = true
+                        dataToResolve = config.res
+                        if(!config.cb || !config.inLoop){
+                            readyToResolveCB = true
+                            readyToResolve = true
+                            dataToResolve = response        
+                            // resolve(config.res)
+                        }
+                        // else{
+                        //     if(config.cb.func){
+                        //         config.inLoop = true
+                        //         config.loopAry = config.res
+                        //         config.isList = false
+                        //         config.loopCount = config.loopCount+1 || 0
+                        //         let args = {...config.cb.args} || {}
+                        //         config.cb.fill = config.cb.fill || []
+                        //         config.cb.fill.forEach((item)=>{
+                        //             args[item.key] = item.value_func(config.res[config.loopCount])
+                        //         })
+
+                        //         resolve(config.cb.func(args,config))
+                        //     }else{
+                        //         resolve(config.res)
+                        //     }
+                        // }
                     }
                 }else{
-                    resolve(response)
+                    readyToResolveCB = true
+                    readyToResolve = true
+                    dataToResolve = response
+                    // resolve(response)
+                }
+                if(readyToResolve){
+                    if(config.cb && readyToResolveCB){
+                        if(config.cb.func){
+                            if(config.loopCount !== undefined){
+                                config.res[config.loopCount][config.cb.res_key] = response.data[config.cb.res_key]
+                            }
+                            config.inLoop = true
+                            // config.loopAry = config.res
+                            config.isList = false
+                            config.loopCount = config.loopCount+1 || 0
+                            let args = {...config.cb.args} || {}
+                            config.cb.fill = config.cb.fill || []
+                            if(config.loopCount < config.res.length){
+                                config.cb.fill.forEach((item)=>{
+                                    args[item.key] = item.value_func(config.res[config.loopCount])
+                                })
+                                resolve(config.cb.func(args,config))
+                            }else{
+                                resolve(config.res)
+                            }
+                        }else{
+                            resolve(config.res)
+                        }
+                    }else{
+                        resolve(dataToResolve)
+                    }
                 }
             })
             .catch(function (error) {
