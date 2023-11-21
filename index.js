@@ -14,7 +14,6 @@ function ALL(config) {
             
         }
         config.query = {...config.query_data_defaults,...config.query}
-        // console.log("config",config)
         let httpconfig = {
             method: config.method,
             url: `${config.base_url}${config.v || config.default_v}${config.path}${config.query ? `?${querystring.stringify(config.query)}` : ''}`,
@@ -43,11 +42,11 @@ function ALL(config) {
                     config.res = config.res || []
                     config.res.push(...config.getDataOnly(response))
                     console.log("config.res.length",config.res.length,"config.org_limit",config.org_limit,"config.query.limit",config.query.limit)
-                    if(config.res.length < config.org_limit){
+                    if(config.res.length < config.org_limit && !config.inLoop){
                         if(config.getDataOnly(response).length < config.query.limit){
                             readyToResolveCB = true
                             readyToResolve = true
-                            dataToResolve = ALL(config)        
+                            dataToResolve = config.res       
 
                             // return resolve(config.res)
                         }else
@@ -68,23 +67,6 @@ function ALL(config) {
                             dataToResolve = response        
                             // resolve(config.res)
                         }
-                        // else{
-                        //     if(config.cb.func){
-                        //         config.inLoop = true
-                        //         config.loopAry = config.res
-                        //         config.isList = false
-                        //         config.loopCount = config.loopCount+1 || 0
-                        //         let args = {...config.cb.args} || {}
-                        //         config.cb.fill = config.cb.fill || []
-                        //         config.cb.fill.forEach((item)=>{
-                        //             args[item.key] = item.value_func(config.res[config.loopCount])
-                        //         })
-
-                        //         resolve(config.cb.func(args,config))
-                        //     }else{
-                        //         resolve(config.res)
-                        //     }
-                        // }
                     }
                 }else{
                     readyToResolveCB = true
@@ -94,27 +76,43 @@ function ALL(config) {
                 }
                 if(readyToResolve){
                     if(config.cb && readyToResolveCB){
-                        if(config.cb.func){
+                        // if(config.cb.func){
                             if(config.loopCount !== undefined){
-                                config.res[config.loopCount][config.cb.res_key] = response.data[config.cb.res_key]
+                                if(!config.res[config.loopCount][config.cb[config.cbCount].res_key]){
+                                    config.res[config.loopCount][config.cb[config.cbCount].res_key] = response.data[config.cb[config.cbCount].res_key]
+                                }else{
+                                    config.res[config.loopCount][config.cb[config.cbCount].res_key] = {...config.res[config.loopCount][config.cb[config.cbCount].res_key],...response.data[config.cb[config.cbCount].res_key]}
+                                }
+                            }
+                            // config.loopCount = config.loopCount+1 || 0
+                            if(config.loopCount == undefined){
+                                config.loopCount = 0
+                                config.cbCount = 0
+                            }else{
+                                if(config.cb[config.cbCount+1] == undefined){
+                                    config.cbCount = 0
+                                    config.loopCount++
+                                }else{
+                                    config.cbCount++
+                                }
                             }
                             config.inLoop = true
                             // config.loopAry = config.res
                             config.isList = false
-                            config.loopCount = config.loopCount+1 || 0
-                            let args = {...config.cb.args} || {}
-                            config.cb.fill = config.cb.fill || []
+                            let args = {...config.cb[config.cbCount].args} || {}
+                            config.cb[config.cbCount].fill = config.cb[config.cbCount].fill || []
                             if(config.loopCount < config.res.length){
-                                config.cb.fill.forEach((item)=>{
+                                config.cb[config.cbCount].fill.forEach((item)=>{
                                     args[item.key] = item.value_func(config.res[config.loopCount])
                                 })
-                                resolve(config.cb.func(args,config))
+                                resolve(config.cb[config.cbCount].func(args,config))
                             }else{
+                                // console.log("config.res",config.res)
                                 resolve(config.res)
                             }
-                        }else{
-                            resolve(config.res)
-                        }
+                        // }else{
+                        //     resolve(config.res)
+                        // }
                     }else{
                         resolve(dataToResolve)
                     }
