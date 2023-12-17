@@ -4,9 +4,9 @@ const querystring = require('node:querystring');
 const uuidv4 = require('uuid').v4;
 const cache = {}
 
-const lf = console.log
+const lf = ()=>{}//console.log
 const clv = console.log//()=>{}
-const cli = console.log
+const cli = console.log//()=>{}//
 
 function REQSingle(config) {
     lf("function REQSingle")
@@ -190,6 +190,7 @@ function createJobs(initem,jobs,config) {
 function doJob(jobs,jobCount) {
     lf("function doJob")
     cli("jobCount",jobCount,"/",jobs.length)
+    process.stdout.write(`jobCount ${jobCount}/${jobs.length}\r`)
     return new Promise((resolve, reject) => {
         jobs[jobCount].func(jobs[jobCount].options,jobs[jobCount].config)
         .then((response)=>{
