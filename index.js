@@ -4,7 +4,7 @@ const querystring = require('node:querystring');
 const uuidv4 = require('uuid').v4;
 const cache = {}
 
-const lf = ()=>{}//console.log
+const lf = console.log//()=>{}//console.log
 const clv = console.log//()=>{}
 const cli = console.log//()=>{}//
 
@@ -40,11 +40,12 @@ function REQSingle(config) {
             }
 
         }
-        cli("url",httpconfig.url)
         // clv("config",config)
-        if(config.cache && cache[httpconfig.url]){
+        if(config.cache && config.method.toLowerCase() == "get" && cache[httpconfig.url]){
+            cli(httpconfig.method,"from cache url",httpconfig.url)
             resolve(cache[httpconfig.url])
         }else{
+            cli(httpconfig.method,"url",httpconfig.url)
             axios(httpconfig)
                 .then(function (response) {
                     if(config.cache){
@@ -99,7 +100,7 @@ function REQList(config) {
             config.pages.current++
             config.res.push(...config.getDataOnly(response))
             if(config.pages.current < config.pages.total && config.getDataOnly(response).length == config.query.limit){
-                config.query.after = config.getNext(config,response.data)
+                config.query[config.nextKey] = config.getNext(config,response.data)
                 resolve(REQList(config))
             }else{
                 // resolve(config.res)
